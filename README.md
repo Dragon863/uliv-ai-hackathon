@@ -1,8 +1,9 @@
 # Meadow House Repairs
+## Overview
 
 Visit [https://repairs.danieldb.uk](https://repairs.danieldb.uk) to see the live app!
 
-Flutter app for reporting and tracking repairs at Meadow House. The app reads and writes jobs through the Python API; it does not keep an offline copy on the device. The API used by the current app source is `https://hack.danieldb.uk` (configured in `lib/ui/app.dart`).
+Flutter app for reporting and tracking repairs at Meadow House. The app reads and writes jobs through the Python API; it does not keep an offline copy on the device. The API used by the current app source is `https://hack.danieldb.uk` (configured in `lib/ui/app.dart`). It is hosted in a docker container on a Proxmox VM so that it can easily be deployed anywhere and backed up with snapshots
 
 ## Run the app
 
