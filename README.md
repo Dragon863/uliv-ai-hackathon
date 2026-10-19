@@ -1,60 +1,63 @@
 # Meadow House Repairs
 
-Flutter app for reporting and tracking Meadow House repairs. Job data lives in the Python server's JSON file and is shared by connected app instances. The app needs the server URL at runtime; it does not silently save jobs on the device.
+Visit [https://repairs.danieldb.uk](https://repairs.danieldb.uk) to see the live app!
 
-## Start the Python backend
+Flutter app for reporting and tracking repairs at Meadow House. The app reads and writes jobs through the Python API; it does not keep an offline copy on the device. The API used by the current app source is `https://hack.danieldb.uk` (configured in `lib/ui/app.dart`).
 
-The backend uses only Python's standard library (Python 3.10+):
+## Run the app
+
+Flutter stable **3.47.7** (Dart **3.13.5**). Check your installation with `flutter --version`.
+
+```sh
+flutter pub get
+flutter run -d chrome
+```
+
+For Android, use Android Studio or list connected targets with `flutter devices`, then run:
+
+```sh
+flutter run -d <android-device-id>
+```
+
+The current API URL is compiled into the app source. If you deploy the API at a different address, update the `apiUrl` constant in `lib/ui/app.dart` before running or building. The optional `MEADOW_API_TOKEN` is read as a Dart compile-time define; pass `--dart-define=MEADOW_API_TOKEN=...` to `flutter run` or `flutter build` when the server requires a bearer token. A token embedded in a client app can be extracted, so use it only for a private demo.
+
+## Backend
+
+The Python 3.10+ API uses only the standard library. It provides `GET /api/jobs`, `PUT /api/jobs`, and `GET /health`; browser requests are enabled with CORS.
+
+To run directly, from the repository root:
 
 ```sh
 python3 backend/server.py
 ```
 
-It listens on port `8000` and stores data in `backend/data/jobs.json`. Override the port or data path with `PORT` and `MEADOW_DATA_FILE`. To enable a shared bearer token, configure `MEADOW_API_TOKEN` on the server and pass the same value to Flutter:
+The direct server listens on port `8001` by default and stores jobs at `backend/data/jobs.json`. Set `PORT` or `MEADOW_DATA_FILE` to override these values. For example:
 
 ```sh
-MEADOW_API_TOKEN='choose-a-private-token' python3 backend/server.py
+PORT=8000 MEADOW_DATA_FILE=backend/data/jobs.json python3 backend/server.py
 ```
 
-Set the token when the server can be reached outside your own computer. Put the JSON file on persistent storage when hosting in a container or platform whose local disk is temporary.
-
-The API provides `GET /api/jobs`, `PUT /api/jobs`, and `GET /health`. Browser access is enabled with CORS.
-
-## Configure and run Flutter
-
-Flutter stable **3.47.0** (Dart **3.13.5**). Confirm the SDK with `flutter --version`.
-
-Pass the backend origin (scheme, host, and optional port, without `/api/jobs`) to the app:
+To run the containerized backend:
 
 ```sh
-# Chrome on the same computer
-flutter run -d chrome --dart-define=MEADOW_API_URL=http://127.0.0.1:8000
-
-# Android emulator (the emulator reaches the host computer through 10.0.2.2)
-flutter run -d <android-device-id> --dart-define=MEADOW_API_URL=http://10.0.2.2:8000
+docker compose -f backend/compose.yml up -d --build
 ```
 
-For a physical Android device, use the computer's LAN address, such as `http://192.168.1.20:8000`, and allow port 8000 through its firewall. If token authentication is enabled, add `--dart-define=MEADOW_API_TOKEN=choose-a-private-token` to the Flutter command.
+Compose publishes port `8000` by default (`MEADOW_PORT` changes the host port) and stores data in the persistent `meadow-data` Docker volume. To require a bearer token, set `MEADOW_API_TOKEN` in the environment before starting the service; provide the same token to the Flutter app with the compile-time define above. Without a token, the API does not authenticate writes. Keep the server and its data volume backed up.
 
-To build Android yourself:
+## Build
 
 ```sh
-flutter pub get
-flutter build apk --release --dart-define=MEADOW_API_URL=https://your-host.example
+flutter build web
+flutter build apk --release
 ```
 
-Add the token define if configured. Use HTTPS when the server is reachable over the public internet. A token compiled into a client app is visible to its users, so use it only for a private demo service.
-
-For web, build with the repository subpath before publishing to GitHub Pages:
-
-```sh
-flutter build web --release --base-href /repo-name/ --dart-define=MEADOW_API_URL=https://your-host.example
-```
+The web build can be served from the site root. For GitHub Pages or another subpath, set the matching base href, for example `--base-href /repo-name/`. Use HTTPS for a publicly reachable API.
 
 ## Features
 
-- Create Normal or Urgent repair reports with field-level validation.
-- Start a job, append progress notes, and complete it with a required note.
-- Browse append-only, timestamped history for every job.
-- Store and share the ID sequence and jobs through the Python backend.
-- Responsive web and Android layouts, local refresh, Material 3, and light/dark themes.
+- Create Normal or Urgent repair reports with required-field validation.
+- Start work, append progress notes, and complete a job with a required completion note.
+- View each job's timestamped, append-only history.
+- Share jobs and the ID sequence through the Python API.
+- Responsive web and Android layouts, refresh action, Material 3, and light and dark themes.
